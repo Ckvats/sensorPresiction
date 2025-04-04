@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body style="text-align: center;">
+    <h1 style="text-align: center;">PV [F] => Thermal Sensor</h1>
+    <h1 style="text-align: center;">SP [Psi] => Pressure Sensor</h1>
+    <h2 id="alarmvalue">Critical <button onclick="showInfo()">ℹ️ Info</button></h2>
+    <ul id="alarm" style="display: inline-block;">Critical</ul>
+    <h2 id="attention_value">Attention <button onclick="attInfo()">ℹ️ Info</button></h2>
+    <ul id="attentionelement" style="display: inline-block;">Attention</ul>
+    <h2 id="warningvalue">Warning <button onclick="warInfo()">ℹ️ Info</button></h2>
+    <ul id="warningelement" style="display: inline-block;">Warning</ul>
+
+    <script>
+        let critical = [];
+        let attention = [];
+        let warning = []
+;        window.onload = ()=>{
+            value();
+        }
+
+        function warInfo(){
+            alert("Any one sensors passes threeshold capacity");
+        }
+        function attInfo(){
+            alert("Sensors are on or near to the threeshold capacity level");
+        }
+        function showInfo(){
+            alert("Both sensors have passed the threeshold capacity level ");
+        }
+
+        function value(){
+            fetch("alarm_final_data.csv")
+            .then( (response)=> (response.text()))
+            .then( (csv)=>{
+                Papa.parse(csv,{
+                    header:true,
+                    skipEmptyLines:true,
+                    complete: function (results){
+                        const data = transformCSVData(results.data);
+                        console.log(data);
+                        liatshow(data);
+                        // document.getElementById("alarm").innerHTML = data;
+                    }
+                })
+            })
+            .catch((error)=>(console.log(error)))
+        }
+
+
+        function liatshow(data){
+            const listitem = document.getElementById("alarm");
+            const warningelement = document.getElementById("warningelement");
+            const attentionelement = document.getElementById("attentionelement");
+            listitem.innerHTML = "";
+            warningelement.innerHTML = "";
+            attentionelement.innerHTML = "";
+            let count = 0;
+            data.forEach(element => {
+                const li = document.createElement('li');
+                if(`${element.critical}`.length>1){
+                    count++;
+                    li.textContent = ` ${element.critical}`;
+                listitem.appendChild(li);
+                }
+                
+            });
+            document.getElementById("alarmvalue").innerHTML+= `  -${count}`;
+            count = 0;
+            data.forEach(element => {
+                const li = document.createElement('li');
+                
+                if((` ${element.attention}`.length)>1){
+                    count++;
+                    li.textContent = ` ${element.attention}`;
+                    attentionelement.appendChild(li);
+                }
+              
+            });
+            document.getElementById("attention_value").innerHTML+= `  -${count}`;
+            count = 0;
+            data.forEach(element => {
+                const li = document.createElement('li');
+                console.log(` ${element.warning}`.length);
+                if((` ${element.warning}`.length)>1){
+                    count++;
+                    li.textContent = ` ${element.warning}`;
+                    warningelement.appendChild(li);
+                }  
+            });
+            document.getElementById("warningvalue").innerHTML+= `  -${count}`;
+            count = 0;
+        }
+
+
+        function transformCSVData(data){
+            return data.map( (row)=>({
+                critical: row.Critical_Alarm,
+                warning:row.Warning,
+                attention: row.Attention
+            }))
+        }
+    </script>
+</body>
+</html>

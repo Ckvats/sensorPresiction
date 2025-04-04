@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h2{
+            word-spacing: 40px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        canvas {
+            width: 100% !important; /* Make the canvas fill the container */
+            height: 400px !important; /* Fix the height of the chart */
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h2>HE130_TT20_Z_PV_[F]	  EC3_PID_MIN_PT3_P_SP_[Psi]	C6_COMPRESSOR_Z_TODAY_STARTS_[Nr]	F_PACK_POLYNOMIAL_Z_COOLING_POWER_[BTU/Hr]	C5_TS11_Z_ALM_[Ok/Alarm]</h2>
+
+    <div class="chart-container">
+        <canvas id="tempPressureChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="alarmChart"></canvas>
+    </div>
+
+    <script>
+        window.onload = ()=> {
+            transformdata();
+        }
+
+        function transformdata(){
+            console.log("Data is being loaded...");
+            fetch('future_predictions.csv')
+                .then(response => response.text())
+                .then(csv => {
+                    Papa.parse(csv, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            const transdata = transformCSVData(results.data);
+                            console.log(transdata);
+                            generateCharts(transdata);
+                        }
+                    })
+                })
+                .catch(error => console.log("Error loading: ", error));
+        }
+
+        function transformCSVData(data) {
+            return data.map(row => ({
+                timestamp: row.timestamp,
+                temperature: parseFloat(row.temperature),
+                pressure: parseFloat(row.pressure),
+                cooling_alarm: parseInt(row.cooling_alarm),
+                compress_alarm: parseInt(row.compress_alarm),
+                final_alarm: parseInt(row.final_alarm)
+            }));
+        }
+
+        function generateCharts(data) {
+            const timestamps = data.map(d => d.timestamp);
+            const temperatures = data.map(d => d.temperature);
+            const pressures = data.map(d => d.pressure);
+            const coolingAlarms = data.map(d => d.cooling_alarm);
+            const compressAlarms = data.map(d => d.compress_alarm);
+            const finalAlarms = data.map(d => d.final_alarm);
+
+            const tempPressureCtx = document.getElementById('tempPressureChart').getContext('2d');
+            const alarmCtx = document.getElementById('alarmChart').getContext('2d');
+
+            // Create the Temperature and Pressure Chart
+            new Chart(tempPressureCtx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        { label: 'Temperature', data: temperatures, borderColor: 'red', fill: false, yAxisID: 'y1' },
+                        { label: 'Pressure', data: pressures, borderColor: 'blue', fill: false, yAxisID: 'y2' }
+                    ]
+                },
+                options: {
+                    responsive: false, // Disable automatic resizing
+                    maintainAspectRatio: false, // Disable aspect ratio maintenance
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Timestamp'
+                            },
+                            ticks: {
+                                autoSkip: true, // Skip some labels to avoid clutter
+                                maxRotation: 45, // Rotate x-axis labels for better readability
+                            }
+                        },
+                        y1: {
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        },
+                        y2: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Pressure (Pa)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Create the Alarm Chart
+            new Chart(alarmCtx, {
+                type: 'bar',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        { label: 'Cooling Alarm', data: coolingAlarms, backgroundColor: 'green' },
+                        { label: 'Compress Alarm', data: compressAlarms, backgroundColor: 'orange' },
+                        { label: 'Final Alarm', data: finalAlarms, backgroundColor: 'red' }
+                    ]
+                },
+                options: {
+                    responsive: false, // Disable automatic resizing
+                    maintainAspectRatio: false, // Disable aspect ratio maintenance
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Timestamp'
+                            },
+                            ticks: {
+                                autoSkip: true, // Skip some labels to avoid clutter
+                                maxRotation: 45, // Rotate x-axis labels for better readability
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Alarms'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

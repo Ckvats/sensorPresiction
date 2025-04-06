@@ -1,0 +1,2 @@
+it is completely based on prediction model using random forest and lstm. The predictions are happening on the sensor data with temperature and pressure sensors. All after getting this data I am checking the value for the threshold of bothe the sensor. After we are getting the value and we have the historic values also then we are doing the prediction. 
+if anyone have any suggestions he can direct contact me on @fastrack50m@gmail.com 
